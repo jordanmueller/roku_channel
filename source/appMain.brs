@@ -1,134 +1,157 @@
-' ********************************************************************
-' **  Sample PlayVideo App
-' **  Copyright (c) 2009 Roku Inc. All Rights Reserved.
-' ********************************************************************
+' basic code to use the three main components I will
+' use for this channel application
+'   1) GridScreen -> show categories
+'   2) PosterScreen -> Show list of course lectures
+'   3) SpringboardScreen -> Show individual courses to be played
+'
 
-Sub Main(args As Dynamic)
-    'initialize theme attributes like titles, logos and overhang color
-    initTheme()
-
-    'test to use some json
-    http = NewHttp("http://people.fas.harvard.edu/~jmueller/roku_json/test.json")
-    rsp = http.GetToStringWithRetry()
-    json = BSJSON()
-    myjson = json.JsonDecode(rsp)
-
-    'has to live for the duration of the whole app to prevent flashing
-    'back to the roku home screen.
-    screenFacade = CreateObject("roPosterScreen")
-    screenFacade.show()
-
-    showSpringboardScreen(myjson.paul_farmer) 
-    
-    'exit the app gently so that the screen doesn't flash to black
-    screenFacade.showMessage("")
-    sleep(25)
-End Sub
-
-'*************************************************************
-'** Set the configurable theme attributes for the application
-'** 
-'** Configure the custom overhang and Logo attributes
-'*************************************************************
-
-Sub initTheme()
-
-    app = CreateObject("roAppManager")
-    theme = CreateObject("roAssociativeArray")
-
-    theme.OverhangPrimaryLogoOffsetSD_X = "72"
-    theme.OverhangPrimaryLogoOffsetSD_Y = "15"
-    theme.OverhangSliceSD = "pkg:/images/Overhang_BackgroundSlice_SD43.png"
-    theme.OverhangPrimaryLogoSD  = "pkg:/images/Logo_Overhang_SD43.png"
-
-    theme.OverhangPrimaryLogoOffsetHD_X = "123"
-    theme.OverhangPrimaryLogoOffsetHD_Y = "20"
-    theme.OverhangSliceHD = "pkg:/images/Overhang_BackgroundSlice_HD.png"
-    theme.OverhangPrimaryLogoHD  = "pkg:/images/Logo_Overhang_HD.png"
-    
-    app.SetTheme(theme)
-
-End Sub
-
-
-'*************************************************************
-'** showSpringboardScreen()
-'*************************************************************
-
-Function showSpringboardScreen(item as object) As Boolean
+' Function to build a generic GridScreen
+Function Main()
     port = CreateObject("roMessagePort")
-    screen = CreateObject("roSpringboardScreen")
+    grid = CreateObject("roGridScreen")
+    grid.SetMessagePort(port)
 
-    print "showSpringboardScreen"
+    rowTitles = CreateObject("roArray", 10, true)
+    for j = 0 to 10
+        rowTitles.Push("[Row Title "+j.toStr()+" ] ")
+    end for
+
+    grid.SetupLists(rowTitles.Count())
+    grid.SetListNames(rowTitles)
+
+    for j = 0 to 10
+        list = CreateObject("roArray", 10, true)
+
+        for i = 0 to 10 
+            o = CreateObject("roAssociativeArray")
+            o.ContentType = "episode"
+            o.Title       = "[Title"+i.tostr+"]"
+            o.ShortDescriptionLine1 = "[ShortDescriptionLine1]"
+            o.ShortDescriptionLine2 = "[ShortDescriptionLine2]"
+            o.Description = ""
+            o.Description = "[Description] "
+            o.Rating      = "NR"
+            o.StarRating  = "75"
+            o.ReleaseDate = "[<mm/dd/yyyy]"
+            o.Length      = 5400
+            o.Actors      = []
+            o.Actors.Push("[Actor1]")
+            o.Actors.Push("[Actor2]")
+            o.Actors.Push("[Actor3]")
+            o.Director = "[Director]"
+            list.Push(o)
+        end for
+
+        grid.SetContentList(j, list)
+
+    end for
+
+    grid.Show()
     
-    screen.SetMessagePort(port)
-    screen.AllowUpdates(false)
-    if item <> invalid and type(item) = "roAssociativeArray"
-        screen.SetContent(item)
-    endif
-
-    screen.SetDescriptionStyle("generic") 'audio, movie, video, generic
-                                        ' generic+episode=4x3,
-    screen.ClearButtons()
-    screen.AddButton(1,"Play")
-    screen.AddButton(2,"Go Back")
-    screen.SetStaticRatingEnabled(false)
-    screen.AllowUpdates(true)
-    screen.Show()
-
-    downKey=3
-    selectKey=6
     while true
-        msg = wait(0, screen.GetMessagePort())
-        if type(msg) = "roSpringboardScreenEvent"
-            if msg.isScreenClosed()
-                print "Screen closed"
-                exit while                
-            else if msg.isButtonPressed()
-                    print "Button pressed: "; msg.GetIndex(); " " msg.GetData()
-                    if msg.GetIndex() = 1
-                         displayVideo(item)
-                    else if msg.GetIndex() = 2
-                         return true
-                    endif
-            else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
+        msg = wait(0, port)
+        if type(msg) = "roGridScreenEvent" then
+            if msg.isScreenClosed() then
+                return -1
+            elseif msg.isListItemFocused()
+                print "Focused msg: ";msg.GetMessage();"row: ";msg.GetIndex();
+                print " col: ";msg.GetData()
+            elseif msg.isListItemSelected()
+                print "Selected msg: ";msg.GetMessage();"row: ;msg.GetIndex();
+                print " col: ";msg.GetData()
             endif
-        else 
-            print "wrong type.... type=";msg.GetType(); " msg: "; msg.GetMessage()
         endif
     end while
+End Function 
 
 
-    return true
-End Function
+' Function to show a generic posterscreen
+'Function Main()
+'    port = CreateObject("roMessagePort")
+'    poster = CreateObject("roPosterScreen")
+'    poster.SetBreadcrumbText"[location1]", "[location2]")
+'    poster.SetMessagePort(port)
+'
+'    list = CreateObject("roArray", 10, true)
+'
+'    for i = 0 to 10 
+'        o = CreateObject("roAssociativeArray")
+'        o.ContentType = "episode"
+'        o.Title       = "[Title]"
+'        o.ShortDescriptionLine1 = "[ShortDescriptionLine1]"
+'        o.ShortDescriptionLine2 = "[ShortDescriptionLine2]"
+'        o.Description = ""
+'        o.Description = "[Description] "
+'        o.Rating      = "NR"
+'        o.StarRating  = "75"
+'        o.ReleaseDate = "[<mm/dd/yyyy]"
+'        o.Length      = 5400
+'        o.Categories  = [] 
+'        o.Categories.Push("[Category1]")
+'        o.Categories.Push("[Category2]")
+'        o.Categories.Push("[Category3]")
+'        o.Actors      = []
+'        o.Actors.Push("[Actor1]")
+'        o.Actors.Push("[Actor2]")
+'        o.Actors.Push("[Actor3]")
+'        o.Director = "[Director]"
+'        list.Push(o)
+'    end for
+'
+'    poster.SetContentList(list)
+'    poster.Show()
+'
+'    while true
+'        msg = wait(0, port)
+'        if msg.isScreenClosed() then
+'            return -1
+'        elseif msg.isButtonPressed()
+'            print "msg: ";msg.GetMessage();"idx: ";msg.GetIndex()
+'        endif
+'    end while
+'End Function
 
-
-'*************************************************************
-'** displayVideo()
-'*************************************************************
-
-Function displayVideo(args As Dynamic)
-    print "Displaying video: "
-    p = CreateObject("roMessagePort")
-    video = CreateObject("roVideoScreen")
-    video.setMessagePort(p)
-
-    video.SetContent(args)
-    video.show()
-
-    while true
-        msg = wait(0, video.GetMessagePort())
-        if type(msg) = "roVideoScreenEvent"
-            if msg.isScreenClosed() then 'ScreenClosed event
-                print "Closing video screen"
-                exit while
-            else if msg.isRequestFailed()
-                print "play failed: "; msg.GetMessage()
-            else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
-            endif
-        end if
-    end while
-End Function
-
+' Function to show a generic Springboard Screen
+'Function Main()
+'    port = CreateObject("roMessagePort")
+'    springBoard = CreateObject("roSpringboardScreen")
+'    springBoard.SetBreadcrumbText("[location 1]", "[location2]")
+'    springBoard.SetMessagePort(port)
+'
+'    o = CreateObject("roAssociativeArray")
+'    o.ContentType = "episode"
+'    o.Title = "[Title]"
+'    o.ShortDescriptionLine1 = "[ShortDescriptionLine1]"
+'    o.ShortDescriptionLine2 = "[ShortDescriptionLine2]"
+'    o.Description = ""
+'    for i = 1 to 15 
+'        o.Description = o.Description + "[Description] "
+'    end for
+'    o.SDPosterUrl = ""
+'    o.HDPosterUrl = ""
+'    o.Rating      = "NR"
+'    o.StarRating  = "75"
+'    o.ReleaseDate = "[mm/dd/yyyy]"
+'    o.Length           = 5400
+'    o.Categories       = CreateObject("roArray", 10, true) 
+'    o.Categories.Push("[Category1]")
+'    o.Categories.Push("[Category2]")
+'    o.Categories.Push("[Category3]")
+'    o.Actors           = CreateObject("roArray", 10, true)
+'    o.Actors.Push("[Actor1]")
+'    o.Actors.Push("[Actor2]")
+'    o.Actors.Push("[Actor3]")
+'    o.Director = "[Director]"
+'
+'    springBoard.SetContent(o)
+'    springBoard.Show()
+'
+'    while true
+'        msg = wait(0, port)
+'        if msg.isScreenClosed() then
+'            return -1
+'        elseif msg.isButtonPressed() 
+'            print "msg: "; msg.GetMessage(); "idx: "; msg.GetIndex()
+'        endif
+'    end while
+'End Function
