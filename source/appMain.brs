@@ -10,12 +10,16 @@
 ' Users can navigate back and forth through each of these components
 ' with their roku remote.
 
+
 ' Main function that is called when the channel is selected
+' This is the entry point for the application.
 Function Main()
     
     displayGridScreen()
 
 EndFunction
+
+
 
 ' Function to build a the GridScreen 
 ' This is the first screen of the channel that lists all
