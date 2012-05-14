@@ -2,6 +2,12 @@
 ' for the roku channel
 
 
+' enterEventLoop is called by each roku component screen.
+' This sets up the event loop waiting for messages sent to the
+' component through the attached message port
+'
+' The event loop performs different actions based on the
+' type of event.
 Function enterEventLoop( port as Object)
     while true
         msg = wait(0, port)
@@ -23,14 +29,14 @@ Function enterEventLoop( port as Object)
         elseif type(msg) = "roVideoScreenEvent"
             leaveLoop = processScreenEvent(msg)
             if leaveLoop = true then
-            	return -1
+        		return -1
             endif
         elseif type(msg) = "Invalid" then
             print "invalid message, closing down"
             exit while
         endif
      end while
-End Function 
+EndFunction 
 
 Function processGridEvent( msg as Object)
     if msg.isScreenClosed() then
@@ -44,7 +50,9 @@ Function processGridEvent( msg as Object)
         print " col: ";msg.GetData()
         displayPosterScreen()
     endif
-End Function 
+    
+    return false
+EndFunction 
 
 Function processPosterEvent( msg as Object)
     if msg.isScreenClosed() then
@@ -56,7 +64,9 @@ Function processPosterEvent( msg as Object)
         print "msg: ";msg.GetMessage();"idx: ";msg.GetIndex()
         displaySpringboardScreen()
     endif
-End Function 
+    
+    return false
+EndFunction 
 
 Function processSpringboardEvent( msg as Object)
     if msg.isScreenClosed() then
@@ -71,7 +81,9 @@ Function processSpringboardEvent( msg as Object)
             return true
         endif
     endif
-End Function 
+    
+    return false
+EndFunction 
 
 Function processScreenEvent( msg as Object )
     if msg.isScreenClosed() then 'ScreenClosed event
@@ -82,5 +94,7 @@ Function processScreenEvent( msg as Object )
     else
         print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
     endif
-End Function
+    
+    return false
+EndFunction
 

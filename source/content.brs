@@ -1,6 +1,11 @@
 ' Functions that get/create content for the different 
 ' roku channel screens
+'
+' Right now it creates and sends back a bunch of generic
+' data, but eventually these functions will pass back
+' real content data to the main roku channel screens.
 
+' get the titles for the Categories in the GridScreen 
 Function getRowTitles()
 
     rowTitles = CreateObject("roArray", 10, true)
@@ -8,9 +13,10 @@ Function getRowTitles()
         rowTitles.Push("[Row Title "+j.toStr()+" ] ")
     end for
     return rowTitles
+EndFunction 
 
-End Function 
-
+' build an array of content objects for a row in
+' the grid screen
 Function getContentList()
 
     list = CreateObject("roArray", 10, true)
@@ -26,9 +32,10 @@ Function getContentList()
     end for
 
     return list
+EndFunction 
 
-End Function 
-
+' Build an array of episodes for a specific course to
+' be displayed in the poster screen navigation
 Function getEpisodesList()
 
     list = CreateObject("roArray", 10, true)
@@ -46,9 +53,9 @@ Function getEpisodesList()
     end for
 
     return list
+EndFunction
 
-End Function
-
+' build up the content object for the springboard screen
 Function getEpisodeContent()
 
     o = CreateObject("roAssociativeArray")
@@ -75,17 +82,17 @@ Function getEpisodeContent()
     o.Director = "[Director]"
 
     return o
-End Function
+EndFunction
 
+' return the specific stream data for the VideoScreen Object
 Function getVideoContent()
 
-    content = CreateObject("roAssociativeArray")
-    content.StreamUrls = ["http://podcast.dce.harvard.edu/2012/01/13669/L01/13669-20110901-L01-1-mp4-av1000-16x9.mp4"]
-    content.Title = "Paul Farmer"
-    content.StreamFormat = "mp4"
-    content.StreamQualities = "SD"
-    content.StreamBitrates = [0]
+    o = CreateObject("roAssociativeArray")
+    o.StreamUrls = ["http://podcast.dce.harvard.edu/2012/01/13669/L01/13669-20110901-L01-1-mp4-av1000-16x9.mp4"]
+    o.Title = "Paul Farmer"
+    o.StreamFormat = "mp4"
+    o.StreamQualities = "SD"
+    o.StreamBitrates = [0]
 
-    return content
-
-End Function
+    return o
+EndFunction
