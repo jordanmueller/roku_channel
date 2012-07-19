@@ -6,7 +6,7 @@
 # Define some variables.
 ZIPDIR=zips
 APPNAME=harvard_roku_channel
-ROKU_DEV_TARGET=10.10.10.130
+ROKU_DEV_TARGET=10.10.10.150
 
 # create the zip dir (if not present)
 if [ ! -d $ZIPDIR ]

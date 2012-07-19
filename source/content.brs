@@ -6,93 +6,107 @@
 ' real content data to the main roku channel screens.
 
 ' get the titles for the Categories in the GridScreen 
-Function getRowTitles()
+Function getCategories()
 
-    rowTitles = CreateObject("roArray", 10, true)
-    for j = 0 to 10
-        rowTitles.Push("[Row Title "+j.toStr()+" ] ")
+    http = NewHttp("http://sjxm9203.xen.prgmr.com:8080/library/category/")
+    rsp = http.GetToStringWithRetry()
+    json = BSJSON()
+    categories = json.JsonDecode(rsp)
+
+    o = CreateObject("roAssociativeArray")
+
+    o.rowTitles     = CreateObject("roArray", categories.count(), true)
+    o.categoryUrls = CreateObject("roArray", categories.count(), true)
+    for i = 0 to (categories.count() - 1)
+        o.rowTitles.push(categories[i].name)
+        o.categoryUrls.push(categories[i].url)
     end for
-    return rowTitles
+
+    return o
 EndFunction 
 
 ' build an array of content objects for a row in
 ' the grid screen
-Function getContentList()
+Function getCourses(url as String)
 
-    list = CreateObject("roArray", 10, true)
+    http = NewHttp(url)
+    rsp = http.GetToStringWithRetry()
+    json = BSJSON()
+    courses = json.JsonDecode(rsp)
 
-    for i = 0 to 10 
+
+    coursesObject = CreateObject("roAssociativeArray")
+    coursesObject.list = CreateObject("roArray", courses.count() - 1, true)
+    coursesObject.urls = CreateObject("roArray", courses.count() - 1, true)
+
+    for i = 0 to (courses.count() - 1)
         o = CreateObject("roAssociativeArray")
         o.ContentType = "series"
-        o.Title       = "[Title" + i.tostr() + "]"
+        o.Title       = courses[i].title
         o.Description = "[Description] "
         o.StarRating  = "50"
         o.ReleaseDate = "[mm/dd/yyyy]"
-        list.Push(o)
+        coursesObject.list.Push(o)
+        coursesObject.urls.Push(courses[i].url)
     end for
 
-    return list
+    return coursesObject
 EndFunction 
 
 ' Build an array of episodes for a specific course to
 ' be displayed in the poster screen navigation
-Function getEpisodesList()
+Function getLectureList( url as String )
 
-    list = CreateObject("roArray", 10, true)
+    print "Getting the Course info with: ";url;
+    http = NewHttp(url)
+    rsp = http.GetToStringWithRetry()
+    json = BSJSON()
+    course = json.JsonDecode(rsp)
 
-    for i = 0 to 10 
+
+    lecturesObject = CreateObject("roAssociativeArray")
+    lecturesObject.list = CreateObject("roArray", course.lectures.count() - 1, true)
+    lecturesObject.urls = CreateObject("roArray", course.lectures.count() - 1, true)
+
+    for i = 0 to (course.lectures.count() - 1)
         o = CreateObject("roAssociativeArray")
         o.ContentType = "episode"
-        o.Title       = "[Title" + i.tostr() + "]"
+        o.Title       = course.lectures[i].title
         o.Description = "[Description] "
         o.Rating      = "NR"
         o.StarRating  = "75"
         o.ReleaseDate = "[mm/dd/yyyy]"
         o.Length      = 5400
-        list.Push(o)
+        lecturesObject.list.Push(o)
+        lecturesObject.urls.Push(course.lectures[i].url)
     end for
 
-    return list
+    return lecturesObject
 EndFunction
 
 ' build up the content object for the springboard screen
-Function getEpisodeContent()
+Function getEpisodeContent(url)
 
-    o = CreateObject("roAssociativeArray")
-    o.ContentType = "episode"
-    o.Title = "[Title]"
-    o.Description = ""
-    for i = 1 to 15 
-        o.Description = o.Description + "[Description] "
-    end for
-    o.SDPosterUrl = ""
-    o.HDPosterUrl = ""
-    o.Rating      = "NR"
-    o.StarRating  = "75"
-    o.ReleaseDate = "[mm/dd/yyyy]"
-    o.Length           = 5400
-    o.Categories       = CreateObject("roArray", 10, true) 
-    o.Categories.Push("[Category1]")
-    o.Categories.Push("[Category2]")
-    o.Categories.Push("[Category3]")
-    o.Actors           = CreateObject("roArray", 10, true)
-    o.Actors.Push("[Actor1]")
-    o.Actors.Push("[Actor2]")
-    o.Actors.Push("[Actor3]")
-    o.Director = "[Director]"
+    print "Getting the Lecture info: ";url;
+    http = NewHttp(url)
+    rsp = http.GetToStringWithRetry()
+    json = BSJSON()
+    lecture = json.JsonDecode(rsp)
 
-    return o
-EndFunction
+    episode = CreateObject("roAssociativeArray")
+    episode.ContentType = "episode"
+    episode.Title = lecture.title
+    episode.Description = lecture.description
+    episode.SDPosterUrl = ""
+    episode.HDPosterUrl = ""
+    episode.Rating      = "NR"
+    episode.StarRating  = "75"
+    episode.ReleaseDate = lecture.release_date
+    episode.Length      = lecture.length
+    episode.StreamUrls  = [lecture.stream_url]
+    episode.StreamFormat = lecture.stream_format
+    episode.StreamQualities   = lecture.stream_qualities
+    episode.StreamBitrates    = [lecture.stream_bitrate]
 
-' return the specific stream data for the VideoScreen Object
-Function getVideoContent()
-
-    o = CreateObject("roAssociativeArray")
-    o.StreamUrls = ["http://podcast.dce.harvard.edu/2012/01/13669/L01/13669-20110901-L01-1-mp4-av1000-16x9.mp4"]
-    o.Title = "Paul Farmer"
-    o.StreamFormat = "mp4"
-    o.StreamQualities = "SD"
-    o.StreamBitrates = [0]
-
-    return o
+    return episode
 EndFunction

@@ -8,21 +8,21 @@
 '
 ' The event loop performs different actions based on the
 ' type of event.
-Function enterEventLoop( port as Object)
+Function enterEventLoop( port as Object, urls as Object )
     while true
         msg = wait(0, port)
         if type(msg) = "roGridScreenEvent" then
-        	leaveLoop = processGridEvent(msg)
+        	leaveLoop = processGridEvent(msg, urls)
         	if leaveLoop = true then 
         		return -1
             endif
         elseif type(msg) = "roPosterScreenEvent" then
-        	leaveLoop = processPosterEvent(msg)
+        	leaveLoop = processPosterEvent(msg,urls)
         	if leaveLoop = true then 
         		return -1
             endif
         elseif type(msg) = "roSpringboardScreenEvent" then
-        	leaveLoop = processSpringboardEvent(msg)
+        	leaveLoop = processSpringboardEvent(msg,urls)
         	if leaveLoop = true then 
         		return -1
             endif
@@ -38,7 +38,7 @@ Function enterEventLoop( port as Object)
      end while
 EndFunction 
 
-Function processGridEvent( msg as Object)
+Function processGridEvent( msg as Object, urls as Object)
     if msg.isScreenClosed() then
     	print "Grid Screen Closed. Exiting."
         return true
@@ -48,13 +48,13 @@ Function processGridEvent( msg as Object)
     elseif msg.isListItemSelected()
         print "Selected msg: ";msg.GetMessage();"row: ";msg.GetIndex();
         print " col: ";msg.GetData()
-        displayPosterScreen()
+        displayPosterScreen( urls[msg.GetIndex()][msg.GetData()] )
     endif
     
     return false
 EndFunction 
 
-Function processPosterEvent( msg as Object)
+Function processPosterEvent( msg as Object, urls as Object)
     if msg.isScreenClosed() then
     	print "Poster Screen Closed. Exiting."
         return true
@@ -62,20 +62,20 @@ Function processPosterEvent( msg as Object)
         print "msg: ";msg.GetMessage();"idx: ";msg.GetIndex()
     elseif msg.isListItemSelected()
         print "msg: ";msg.GetMessage();"idx: ";msg.GetIndex()
-        displaySpringboardScreen()
+        displaySpringboardScreen(urls[msg.GetIndex()])
     endif
     
     return false
 EndFunction 
 
-Function processSpringboardEvent( msg as Object)
+Function processSpringboardEvent( msg as Object, episode as Object)
     if msg.isScreenClosed() then
     	print "Springboard Screen Closed. Exiting."
         return true
     elseif msg.isButtonPressed() 
         print "msg: "; msg.GetMessage(); "idx: "; msg.GetIndex()
         if msg.GetIndex() = 1
-            displayVideo()
+            displayVideo(episode)
         else if msg.GetIndex() = 2
             print "go back"
             return true

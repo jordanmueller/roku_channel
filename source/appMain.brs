@@ -10,6 +10,8 @@
 ' Users can navigate back and forth through each of these components
 ' with their roku remote.
 
+' CONSTANTS
+
 
 ' Main function that is called when the channel is selected
 ' This is the entry point for the application.
@@ -29,45 +31,50 @@ Function displayGridScreen()
     grid = CreateObject("roGridScreen")
     grid.SetMessagePort(port)
 
-    rowTitles = getRowTitles()
+    categories = getCategories()
+    rowTitles  = categories.rowTitles
     titleCount = rowTitles.count()
 
     grid.SetupLists(titleCount)
     grid.SetListNames(rowTitles)
 
-    for j = 0 to titleCount
-    	contentList = getContentList()
-        grid.SetContentList(j, contentList)
+    ' create urls 2d array to hold the urls for the courses
+    dim courseUrls[titleCount - 1]
+
+    for j = 0 to (titleCount - 1)
+    	courses = getCourses(categories.categoryUrls[j])
+        grid.SetContentList(j, courses.list)
+        courseUrls[j] = courses.urls
     end for
 
     grid.Show()
 
-    enterEventLoop(port)
+    enterEventLoop(port, courseUrls)
 EndFunction 
 
 ' Poster screen is the second level navigation that 
 ' displays all available lectures in a particular course
 ' selected from the GridScreen
-Function displayPosterScreen()
+Function displayPosterScreen( url as String )
     port = CreateObject("roMessagePort")
     poster = CreateObject("roPosterScreen")
     poster.SetBreadcrumbText("[location1]", "[location2]")
     poster.SetMessagePort(port)
     poster.setListStyle("flat-episodic")
 
-    list = getEpisodesList()
+    lectures = getLectureList(url)
 
-    poster.SetContentList(list)
+    poster.SetContentList(lectures.list)
     poster.Show()
 
-    enterEventLoop(port)
+    enterEventLoop(port, lectures.urls)
 EndFunction
 
 ' Springboard is the third level of navigation in the
 ' channel. This screen previews information specific to 
 ' a lecture selected from the Poster screen.  From here
 ' users can choose to launch the streaming video
-Function displaySpringboardScreen()
+Function displaySpringboardScreen(url as String)
     port = CreateObject("roMessagePort")
     springBoard = CreateObject("roSpringboardScreen")
     springBoard.SetBreadcrumbText("[location 1]", "[location2]")
@@ -79,24 +86,26 @@ Function displaySpringboardScreen()
     springBoard.SetStaticRatingEnabled(true)
     springBoard.AllowUpdates(true)
 
-    episodeContent = getEpisodeContent()
+    episode = getEpisodeContent(url)
 
-    springBoard.SetContent(episodeContent)
+    springBoard.SetContent(episode)
     springBoard.Show()
 
-    enterEventLoop(port)
+    enterEventLoop(port, episode)
 EndFunction
 
 ' Display video starts the roVideoScreen component
 ' used to show streaming video through the roku device.
-Function displayVideo()
+Function displayVideo(episode as Object)
     port = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(port)
 
-    videoContent = getVideoContent()
-    video.SetContent(videoContent)
+    print episode
+    video.SetContent(episode)
     video.show()
 
-    enterEventLoop(port)
+    urls = CreateObject("roArray", 1, True)
+
+    enterEventLoop(port, urls)
 EndFunction
