@@ -6,6 +6,8 @@
 ' real content data to the main roku channel screens.
 
 ' get the titles for the Categories in the GridScreen 
+
+
 Function getCategories()
 
     http = NewHttp("http://sjxm9203.xen.prgmr.com:8080/library/category/")
@@ -27,25 +29,46 @@ EndFunction
 
 ' build an array of content objects for a row in
 ' the grid screen
-Function getCourses(url as String)
+Function getCourses(url as String, search_row=false as Boolean)
+
+    coursesObject = CreateObject("roAssociativeArray")
+    coursesObject.list = []
+    coursesObject.urls = []
+
+
+    if search_row then
+        coursesObject.list.push({
+        	                     title : "Course Search",
+                                 description : "Search for courses by name, category or number.", 
+                                 SDPosterUrl : "pkg:/images/search.png",
+                                 HDPosterUrl : "pkg:/images/search.png"
+                                })
+        coursesObject.urls.push("search")
+        if url = "search"
+    	    return coursesObject
+    	end if
+        url = replace_string(url, " ", "%20")
+        url = "http://sjxm9203.xen.prgmr.com:8080/library/search/" + url
+    end if
+
+    print url
 
     http = NewHttp(url)
     rsp = http.GetToStringWithRetry()
     json = BSJSON()
     courses = json.JsonDecode(rsp)
 
-
-    coursesObject = CreateObject("roAssociativeArray")
-    coursesObject.list = CreateObject("roArray", courses.count() - 1, true)
-    coursesObject.urls = CreateObject("roArray", courses.count() - 1, true)
-
     for i = 0 to (courses.count() - 1)
         o = CreateObject("roAssociativeArray")
         o.ContentType = "series"
-        o.Title       = courses[i].title
-        o.Description = "[Description] "
-        o.StarRating  = "50"
-        o.ReleaseDate = "[mm/dd/yyyy]"
+        if search_row
+            o.Title = courses[i].title
+        else
+            o.Title = courses[i].number + ": " + courses[i].title
+        end if
+        o.Description = courses[i].description
+        o.ReleaseDate = courses[i].release_date
+        o.SDPosterUrl = courses[i].SDPosterUrl
         coursesObject.list.Push(o)
         coursesObject.urls.Push(courses[i].url)
     end for
@@ -72,11 +95,9 @@ Function getLectureList( url as String )
         o = CreateObject("roAssociativeArray")
         o.ContentType = "episode"
         o.Title       = course.lectures[i].title
-        o.Description = "[Description] "
-        o.Rating      = "NR"
-        o.StarRating  = "75"
-        o.ReleaseDate = "[mm/dd/yyyy]"
-        o.Length      = 5400
+        o.Description = course.lectures[i].title + " - " + course.lectures[i].description
+        o.course_title = course.number + ": " + course.title
+        o.SDPosterUrl = course.lectures[i].SDPosterUrl
         lecturesObject.list.Push(o)
         lecturesObject.urls.Push(course.lectures[i].url)
     end for
@@ -95,18 +116,30 @@ Function getEpisodeContent(url)
 
     episode = CreateObject("roAssociativeArray")
     episode.ContentType = "episode"
-    episode.Title = lecture.title
+    episode.SDPosterURL = lecture.SDPosterURL
+    episode.Title = lecture.title 
+    episode.Course_title = lecture.course_number + ": " + lecture.course_title 
     episode.Description = lecture.description
-    episode.SDPosterUrl = ""
-    episode.HDPosterUrl = ""
-    episode.Rating      = "NR"
-    episode.StarRating  = "75"
-    episode.ReleaseDate = lecture.release_date
+    episode.ReleaseDate = lecture.lecture_date
     episode.Length      = lecture.length
+    episode.Categories  = lecture.categories
     episode.StreamUrls  = [lecture.stream_url]
     episode.StreamFormat = lecture.stream_format
     episode.StreamQualities   = lecture.stream_qualities
     episode.StreamBitrates    = [lecture.stream_bitrate]
 
     return episode
+EndFunction
+
+'Recursively replace values in a string.  There seems to be no
+' string replace function in the brightscript librbary.
+Function replace_string( my_string as String, search_value as String, replace_value as String )
+    found_string_index = instr(1, my_string, search_value)
+    if found_string_index = 0 then
+    	return my_string
+    else
+    	left_string = left( my_string, (found_string_index - 1) )
+    	right_string = right( my_string, (len(my_string) - (found_string_index)))
+    	return left_string + replace_value + replace_string(right_string, search_value, replace_value)
+    end if
 EndFunction

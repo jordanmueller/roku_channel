@@ -21,17 +21,21 @@ Function Main()
 
 EndFunction
 
-
-
 ' Function to build a the GridScreen 
 ' This is the first screen of the channel that lists all
 ' available courses by subject type
-Function displayGridScreen()
+Function displayGridScreen(msg="" as String)
     port = CreateObject("roMessagePort") 
     grid = CreateObject("roGridScreen")
     grid.SetMessagePort(port)
 
     categories = getCategories()
+    categories.rowTitles.unshift("Search")
+    if msg = "" then
+        categories.categoryUrls.unshift("search")
+    else
+        categories.categoryUrls.unshift(msg)
+    end if
     rowTitles  = categories.rowTitles
     titleCount = rowTitles.count()
 
@@ -42,7 +46,11 @@ Function displayGridScreen()
     dim courseUrls[titleCount - 1]
 
     for j = 0 to (titleCount - 1)
-    	courses = getCourses(categories.categoryUrls[j])
+    	search_row = false
+    	if j = 0 then
+    		search_row = true
+        end if
+        courses = getCourses(categories.categoryUrls[j], search_row)
         grid.SetContentList(j, courses.list)
         courseUrls[j] = courses.urls
     end for
@@ -58,12 +66,12 @@ EndFunction
 Function displayPosterScreen( url as String )
     port = CreateObject("roMessagePort")
     poster = CreateObject("roPosterScreen")
-    poster.SetBreadcrumbText("[location1]", "[location2]")
     poster.SetMessagePort(port)
     poster.setListStyle("flat-episodic")
 
     lectures = getLectureList(url)
 
+    poster.SetBreadcrumbText(lectures.list[0].course_title, "")
     poster.SetContentList(lectures.list)
     poster.Show()
 
@@ -77,16 +85,16 @@ EndFunction
 Function displaySpringboardScreen(url as String)
     port = CreateObject("roMessagePort")
     springBoard = CreateObject("roSpringboardScreen")
-    springBoard.SetBreadcrumbText("[location 1]", "[location2]")
     springBoard.SetMessagePort(port)
 
     springBoard.ClearButtons()
     springBoard.AddButton(1,"Play")
     springBoard.AddButton(2,"Go Back")
-    springBoard.SetStaticRatingEnabled(true)
+    springBoard.SetStaticRatingEnabled(false)
     springBoard.AllowUpdates(true)
 
     episode = getEpisodeContent(url)
+    springBoard.SetBreadcrumbText(episode.course_title, "")
 
     springBoard.SetContent(episode)
     springBoard.Show()
@@ -108,4 +116,27 @@ Function displayVideo(episode as Object)
     urls = CreateObject("roArray", 1, True)
 
     enterEventLoop(port, urls)
+EndFunction
+
+' Display the search screen
+Function displaySearchScreen()
+    print "starting search"
+
+    history = CreateObject("roArray", 1, true)
+
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roSearchScreen")
+
+    'commenting out SetBreadcrumbText() hides breadcrumb on screen
+    screen.SetBreadcrumbText("", "search")
+    screen.SetMessagePort(port)
+
+    screen.SetSearchTermHeaderText("Suggestions:")
+    screen.SetSearchButtonText("search")
+    screen.SetClearButtonEnabled(false)
+
+    print "Doing show screen..."
+    screen.Show()
+
+    enterEventLoop(port, screen)
 EndFunction

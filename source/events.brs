@@ -31,6 +31,11 @@ Function enterEventLoop( port as Object, urls as Object )
             if leaveLoop = true then
         		return -1
             endif
+        elseif type(msg) = "roSearchScreenEvent"
+            leaveLoop = processSearchScreenEvent(msg, urls)
+            if leaveLoop = true then
+        		return -1
+            endif
         elseif type(msg) = "Invalid" then
             print "invalid message, closing down"
             exit while
@@ -48,7 +53,12 @@ Function processGridEvent( msg as Object, urls as Object)
     elseif msg.isListItemSelected()
         print "Selected msg: ";msg.GetMessage();"row: ";msg.GetIndex();
         print " col: ";msg.GetData()
-        displayPosterScreen( urls[msg.GetIndex()][msg.GetData()] )
+        ' test for the search one
+        if msg.GetIndex() = 0 and msg.GetData() = 0 then
+            displaySearchScreen()
+        else
+            displayPosterScreen( urls[msg.GetIndex()][msg.GetData()] )
+        endif
     endif
     
     return false
@@ -85,6 +95,40 @@ Function processSpringboardEvent( msg as Object, episode as Object)
     return false
 EndFunction 
 
+Function processSearchScreenEvent( msg as Object, screen as Object )
+    if msg.isScreenClosed()
+        print "screen closed"
+        return true
+    else if msg.isCleared()
+        print "search terms cleared"
+        history.Clear()
+        return false 
+    else if msg.isPartialResult()
+        print "partial search: "; msg.GetMessage()
+
+        if not msg.GetMessage() = ""
+            searching = true
+            results = getCourses(msg.getMessage(), searching)
+
+            resultTitles = CreateObject("roArray", results.list.count(), true)
+            for i = 1 to (results.list.count() - 1)
+                resultTitles.push(results.list[i].title)
+            end for
+
+            screen.SetSearchTerms(resultTitles)
+        endif
+        return false
+    else if msg.isFullResult()
+        print "full search: "; msg.GetMessage()
+        ' we want to relaunch the home screen with a search results line
+        displayGridScreen(msg.GetMessage())
+        return true
+    else
+        print "Unknown event: "; msg.GetType(); " msg: ";sg.GetMessage()
+    endif
+    return false
+EndFunction
+
 Function processScreenEvent( msg as Object )
     if msg.isScreenClosed() then 'ScreenClosed event
         print "Closing video screen"
@@ -97,4 +141,3 @@ Function processScreenEvent( msg as Object )
     
     return false
 EndFunction
-
