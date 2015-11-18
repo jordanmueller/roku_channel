@@ -10,7 +10,7 @@
 
 Function getCategories()
 
-    http = NewHttp("http://sjxm9203.xen.prgmr.com:8080/library/category/")
+    http = NewHttp("http://evening-forest-8081.herokuapp.com/library/category/")
     rsp = http.GetToStringWithRetry()
     json = BSJSON()
     categories = json.JsonDecode(rsp)
@@ -48,7 +48,7 @@ Function getCourses(url as String, search_row=false as Boolean)
     	    return coursesObject
     	end if
         url = replace_string(url, " ", "%20")
-        url = "http://sjxm9203.xen.prgmr.com:8080/library/search/" + url
+        url = "http://evening-forest-8081.herokuapp.com/library/search/" + url
     end if
 
     print url
